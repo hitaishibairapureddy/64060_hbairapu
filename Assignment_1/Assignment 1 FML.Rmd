@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # Summary
-This document contains the analysis of global unemployment data.
+This document contains the analysis of global unemployment data of all countries.
 
 ## R Markdown
 ```{r}
