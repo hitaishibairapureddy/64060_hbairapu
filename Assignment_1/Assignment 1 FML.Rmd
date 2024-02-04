@@ -1,0 +1,63 @@
+---
+title: "Assignment 1 FML"
+author: "Hitaishi Bairapureddy"
+date: "2024-02-02"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Summary
+This document contains the analysis of global unemployment data.
+
+## R Markdown
+```{r}
+Global_unemployment <- read.csv("C:\\Users\\bhita\\Downloads\\archive\\global_unemployment_data.csv")
+View(Global_unemployment)
+```
+This file has been imported from https://www.kaggle.com/datasets/sazidthe1/global-unemployment-data
+
+```{r}
+mode(Global_unemployment$X2024)
+```
+```{r}
+median(Global_unemployment$X2020)
+```
+```{r}
+mean(Global_unemployment$X2020)
+```
+```{r}
+max(Global_unemployment$X2020)
+```
+```{r}
+sd(Global_unemployment$X2020)
+```
+The above values represent descriptive statistics for selection of quantitative variable and the shows mode, median, mean, maximum value and standard deviation for the quantitative variables.
+
+
+```{r}
+str(Global_unemployment$age_categories)
+```
+The above values represent categorical descriptive analysis of variables
+
+```{r}
+Global_unemployment_transformed <- (Global_unemployment$X2020 - mean(Global_unemployment$X2020)/median(Global_unemployment$X2020))
+head(Global_unemployment_transformed)
+```
+The above represents the transformation of variables.
+
+```{r}
+hist(Global_unemployment$X2020)
+```
+The above represents the graphical representation of histogram
+```{r}
+x <- Global_unemployment$X2020
+y <- Global_unemployment$X2024
+plot(x,y, main = "Scatterplot", xlab = "x2020", ylab = "x2024")
+```
+The above represents the graphical representation of scatterplot and the variables selected are unemployement in 2020 and 2024.
+
+
