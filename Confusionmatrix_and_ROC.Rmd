@@ -1,0 +1,131 @@
+---
+title: "Confusionmatrix_and_ROC"
+author: "Hitaishi Bairapureddy"
+date: "2024-02-25"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem statement
+  
+  + Create a Confusion Matrix
+  + Plot a ROC curve
+
+
+
+```{r}
+#loading the packages
+library(class)
+library(caret)
+library(ISLR)
+#drawing the summary
+summary(Default)
+```
+
+```{r}
+#Normalizing the data before modelling
+norm.model <- preProcess(Default, method = c('range'))
+Default_normalized <- predict(norm.model,Default)
+#performing descriptive statistics
+summary(Default_normalized)
+```
+knn Classification
+```{r}
+#Training a k-NN model using the train() function from caret
+set.seed(123)
+model <- train(default~balance+income, data = Default_normalized, method = "knn")
+model
+
+```
+
+```{r}
+#Customizing search grid
+set.seed(123)
+search_grid <- expand.grid(k=c(2,7,9,15))
+model <- train(default~balance+income, data = Default_normalized, method="knn", tuneGrid=search_grid)
+model
+```
+
+```{r}
+set.seed(123)
+search_grid <- expand.grid(k=c(2:20))
+model <- train(default~balance+income, data = Default_normalized, method="knn", tuneGrid=search_grid)
+model
+```
+
+Creating training and testing data sets
+```{r}
+#k-NN Implementation in R
+Default_normalized <- Default_normalized[, -2]
+Index_Train <-createDataPartition(Default_normalized$default,p=0.8, list=FALSE)
+Train <- Default_normalized[Index_Train,]
+Test <- Default_normalized[-Index_Train,]
+head(Train)
+head(Test)
+```
+
+knn Classification using predictors
+```{r}
+Train_Pred <-  Train[,2:3]
+Test_Pred <-  Test[,2:3]
+
+Train_lab <-  Train[,1]
+Test_lab <-  Test[,1]
+
+Predicted_Test_labels <-  knn(Train_Pred, Test_Pred, cl=Train_lab, k=4)
+head(Predicted_Test_labels)
+```
+
+```{r}
+chooseCRANmirror(ind=1)
+library(gmodels) #loading required packages
+CrossTable(x=Test_lab, y=Predicted_Test_labels, prop.chisq = FALSE)
+
+
+```
+
+```{r}
+Predicted_Test_labels <- knn(Train_Pred, Test_Pred, cl=Train_lab, k=100, prob = TRUE)
+class_pro <- attr(Predicted_Test_labels, "prob")
+head(class_pro)
+```
+Creating confusion matrix
+```{r}
+Conf_matrix <- confusionMatrix(data=Predicted_Test_labels, reference = Test_lab)
+Conf_matrix
+```
+
+```{r}
+library(pROC) #loading the required package
+```
+
+
+Plotting ROC Curve
+```{r}
+roc.curve <- roc(Test_lab, class_pro)
+plot(roc.curve, main = "ROC Curve", col ="orange")
+```
+
+```{r}
+roc.curve <- roc(Predicted_Test_labels, class_pro)
+roc1 <- plot.roc(Predicted_Test_labels, class_pro, main="Stastiscal comparsion",
+                    percent=TRUE,
+                    col="green")
+roc2 <- lines.roc(Predicted_Test_labels, class_pro, percent=TRUE,
+                     col="purple")
+testob <- roc.test(roc1, roc2)
+text(50, 50, labels=paste("p-value =", format.pval(testob$p.value)), adj=c(0, .2))
+```
+
+```{r}
+plot.roc(Predicted_Test_labels, class_pro, main="Significance interval of a threshold", percent=TRUE,
+ci=TRUE, of="thresholds", 
+thresholds="best", 
+print.thres="best")
+```
+
