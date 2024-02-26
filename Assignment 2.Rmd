@@ -1,0 +1,271 @@
+---
+title: "Assignment_2"
+author: "Hitaishi Bairapureddy"
+date: "2024-02-24"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary
+Following inferences were drawn from the analysis of each problem statement
+    
+    1.Since the knn prediction is 0, the new customer will not be accepting the loan given all the features. 
+    
+    2.Value used for k is 3 and it balances between overfitting and ignoring the predictor information and it yields highest accuracy for validation set for predicting loan acceptance.
+    
+    3.  From the results of confusion matrix, it is indicated that model has low sensitivity(0.693) and high specificity(0.995) which indicates that it is better at identifying non loan acceptors than loan acceptors. However, it has high positive predictive value(0.940) and suggests that model correctly predicts a customer will accept loan or not.
+    
+    4. From the results of knn prediction it indicates that new customer will not accept the loan
+    
+    5. It looks like the algorithm is performing well meeting the expectations because training data accuracy is better than the test and validation accuracy.
+
+
+## Problem Statement
+
+     1. Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and Credit Card = 1. Perform a k-NN classification with all predictors except ID and ZIP code using k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+    
+    2. What is a choice of k that balances between overfitting and ignoring the predictor information?
+    
+    3.Show the confusion matrix for the validation data that results from using the best k
+    
+    4.Consider the following customer: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit Card = 1. Classify the customer using the best k.
+    
+    5.Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with that of the training and validation sets. Comment on the differences and their reason.
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# Loading required packages class, caret, e1071
+library(class)
+library(caret)
+library(e1071)
+```
+
+```{r}
+Universal_bank <- read.csv("C:\\Users\\bhita\\OneDrive\\Documents\\hithu\\FML\\UniversalBank.csv")
+head(Universal_bank)
+```
+
+```{r}
+dim(Universal_bank)
+```
+
+```{r}
+summary(Universal_bank)
+```
+
+```{r}
+Universal_bank$ID <- NULL
+Universal_bank$ZIP.Code <- NULL
+summary(Universal_bank)
+```
+
+```{r}
+Universal_bank$Education <- as.factor(Universal_bank$Education)
+#Converting Education column into Dummy variable
+Dummy <- dummyVars(~., data = Universal_bank)
+Universal_bank_1 <- as.data.frame(predict(Dummy,Universal_bank))
+```
+
+
+```{r}
+#Splitting the data(100%) into two sets- Training and testing in the ratio of 6:4 respectively
+set.seed(1)
+train.data <- sample(row.names(Universal_bank_1), 0.6*dim(Universal_bank_1)[1])
+valida.data <- setdiff(row.names(Universal_bank_1), train.data)
+train.df <- Universal_bank_1[train.data,]
+valid.df <- Universal_bank_1[valida.data,]
+summary(train.df)
+
+```
+
+```{r}
+#Normalizing the data
+train.norm.df <- train.df[,-10] #the 10 th variable is personal.loan
+valid.norm.df <- valid.df[,-10]
+norm.values <- preProcess(train.df[, -10], method = c("center", "scale"))
+train.norm.df <- predict(norm.values, train.df[, -10])
+valid.norm.df <- predict(norm.values, valid.df[, -10])
+```
+
+Q1. Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 =1, Education_30,Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and Credit Card = 1. Perform a k-NN classification with all predictors except ID and ZIP code using k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+```{r}
+New_customer <- data.frame( Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Education.1 = 0,
+  Education.2 = 1,
+  Education.3 = 0,
+  Mortgage = 0,
+  Securities.Account = 0,
+  CD.Account = 0,
+  Online = 1,
+  CreditCard = 1)
+
+New_customer_normalising <- New_customer
+New_customer_normalising <- predict(norm.values, New_customer_normalising)
+#Normalising of the New Customer is done above.
+knn.prediction1 <- class::knn(train = train.norm.df,
+                              test = New_customer_normalising,
+                              cl = train.df$Personal.Loan, k = 1)
+knn.prediction1
+```
+Inference: Since the knn prediction is 0, the new customer will not be accepting the loan given all the features. 
+
+
+Q2. What is a choice of k that balances between overfitting and ignoring the predictor information?
+```{r}
+#Calculating accuracy for each value of k
+#Setting the range of k values
+Accuracy.df <- data.frame(k = seq(1, 15, 1), overallaccuracy = rep(0, 15))
+for (i in 1:15) {
+  knn.prediction2 <- class::knn(train = train.norm.df,
+                                test = valid.norm.df,
+                                cl = train.df$Personal.Loan, k = i)
+  Accuracy.df[i, 2] <- confusionMatrix(knn.prediction2,
+                                       as.factor(valid.df$Personal.Loan),positive = "1")$overall[1]
+  
+}
+which(Accuracy.df[,2] == max(Accuracy.df[,2]))
+```
+Inference: Based on the above results, value used for k is 3 and it balances between overfitting and ignoring the predictor information and it yields highest accuracy for validation set for predicting loan acceptance.
+
+
+Q3.Show the confusion matrix for the validation data that results from using the best k.
+```{r}
+knn.prediction3 <- class::knn(train = train.norm.df,
+                              test = valid.norm.df,
+                              cl = train.df$Personal.Loan, k=3)
+knn.prediction3
+```
+
+```{r}
+#creating confusion matrix
+Confusion_matrix <- confusionMatrix(knn.prediction3, as.factor(valid.df$Personal.Loan), positive = "1")
+Confusion_matrix
+```
+Inference: From the results of confusion matrix, it is indicated that model has low sensitivity(0.693) and high specificity(0.995) which indicates that it is better at identifying non loan acceptors than loan acceptors. However, it has high positive predictive value(0.940) and suggests that model correctly predicts a customer will
+loan or not.
+
+
+
+Q4. Consider the following customer: Age = 40, Experience = 10, Income = 84,Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0,Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit Card = 1. Classify the customer using the best k.
+
+```{r}
+#Data frame creation and normalizing
+New_customer1 <- data.frame( Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Education.1 = 0,
+  Education.2 = 1,
+  Education.3 = 0,
+  Mortgage = 0,
+  Securities.Account = 0,
+  CD.Account = 0,
+  Online = 1,
+  CreditCard = 1)
+
+New_customer1_normalising <- New_customer1
+New_customer1_normalising <- predict(norm.values, New_customer1_normalising)
+#predicting knn
+knn.prediction4 <- knn(train = train.norm.df,
+                       test = New_customer1_normalising,
+                       cl = train.df$Personal.Loan, k=3)
+knn.prediction4
+```
+Inference: From the results of knn prediction it indicates that new customer will not accept the loan
+
+
+5. Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply
+the k-NN method with the k chosen above. Compare the confusion matrix of the test set
+with that of the training and validation sets. Comment on the differences and their reason.
+```{r}
+set.seed(1)
+train_index1 <- sample(row.names(Universal_bank_1), 0.5*dim(Universal_bank_1)[1])
+train.df1 <- Universal_bank_1[train_index1,]
+
+valid_index1 <- setdiff(row.names(Universal_bank_1), train_index1)
+valid.df1 <- Universal_bank_1[valid_index1, ]
+
+valid_index2 <- sample(row.names(valid.df1),0.6*dim(valid.df1)[1])
+valid.df2 <- valid.df1[valid_index2, ]
+
+test_index1 <- setdiff(row.names(valid.df1),valid_index2)
+test.df1 <- valid.df1[test_index1, ]
+
+```
+
+```{r}
+#Normalizing the data
+train.norm.df1 <- train.df1[,-10]
+valid.norm.df2 <- valid.df2[,-10]
+test.norm.df1 <- test.df1[,-10]
+
+norm.values1 <- preProcess(train.df1[,-10], method = c("center", "scale"))
+train.norm.df1 <- predict(norm.values1, train.df1[,-10])
+valid.norm.df2 <- predict(norm.values1, valid.df2[,-10])
+
+test.norm.df1 <- predict(norm.values1, test.df1[,-10])
+```
+
+```{r}
+#spliting data 50% for training 
+knn.prediction5 <- class::knn(train = train.norm.df1,
+                              test = train.norm.df1,
+                              cl = train.df1$Personal.Loan, k= 3)
+knn.prediction5
+```
+
+```{r}
+Confusion_matrix1 <- confusionMatrix(knn.prediction5, as.factor(train.df1$Personal.Loan))
+Confusion_matrix1
+```
+
+```{r}
+#validation set - splitting data into 30%
+knn.prediction6 <- class::knn(train = train.norm.df1,
+                              test = valid.norm.df2,
+                              cl = train.df1$Personal.Loan, k= 3)
+knn.prediction6
+```
+
+```{r}
+Confusion_matrix2 <- confusionMatrix(knn.prediction6, as.factor(valid.df2$Personal.Loan))
+Confusion_matrix2
+```
+
+```{r}
+#test set - splitting data 20%
+knn.prediction7 <- class::knn(train = train.norm.df1,
+                              test = test.norm.df1,
+                              cl = train.df1$Personal.Loan, k= 3)
+knn.prediction7
+
+```
+
+```{r}
+#creating confusion matrix
+Confusion_matrix3 <- confusionMatrix(knn.prediction7, as.factor(test.df1$Personal.Loan))
+Confusion_matrix3
+```
+Inference: From the results, it looks like the algorithm is performing well meeting the expectations because training data accuracy is better than the test and validation accuracy.
+
